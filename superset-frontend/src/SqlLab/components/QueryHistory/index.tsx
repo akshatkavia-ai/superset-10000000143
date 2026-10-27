@@ -24,7 +24,7 @@ import { EmptyState, Skeleton } from '@superset-ui/core/components';
 import { t } from '@apache-superset/core/translation';
 import { FeatureFlag, isFeatureEnabled } from '@superset-ui/core';
 import { styled, css } from '@apache-superset/core/theme';
-import QueryTable from 'src/SqlLab/components/QueryTable';
+import QueryComparison from 'src/SqlLab/components/QueryComparison';
 import { SqlLabRootState } from 'src/SqlLab/types';
 import { useEditorQueriesQuery } from 'src/hooks/apiResources/queries';
 import useEffectEvent from 'src/hooks/useEffectEvent';
@@ -122,7 +122,8 @@ const QueryHistory = ({
   return editorQueries.length > 0 ? (
     <>
       <PanelToolbar viewId={ViewLocations.sqllab.queryHistory} />
-      <QueryTable
+      <QueryComparison
+        key={String(editorId)}
         columns={[
           'state',
           'started',

@@ -68,15 +68,17 @@ interface QueryTableQuery extends Omit<
   started?: ReactNode;
   user?: ReactNode;
   db?: ReactNode;
+  comparison?: ReactNode;
 }
 
-interface QueryTableProps {
+export interface QueryTableProps {
   columns?: string[];
   queries?: QueryResponse[];
   onUserClicked?: Function;
   onDbClicked?: Function;
   displayLimit: number;
   latestQueryId?: string | undefined;
+  renderComparison?: (query: QueryResponse) => ReactNode;
 }
 
 const openQuery = (id: number) => {
@@ -90,6 +92,7 @@ const QueryTable = ({
   onDbClicked = () => undefined,
   displayLimit,
   latestQueryId,
+  renderComparison,
 }: QueryTableProps) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
@@ -112,6 +115,7 @@ const QueryTable = ({
     sql: t('SQL'),
     results: t('Results'),
     actions: t('Actions'),
+    comparison: t('Compare'),
   };
 
   const setHeaders = (column: string) => {
@@ -260,6 +264,7 @@ const QueryTable = ({
       .map(query => {
         const { state, sql, progress, results: _results, ...rest } = query;
         const q = rest as QueryTableQuery;
+        q.comparison = renderComparison?.(query);
 
         const status = statusAttributes[state] || statusAttributes.error;
 
@@ -376,7 +381,14 @@ const QueryTable = ({
         return q;
       })
       .reverse();
-  }, [queries, onUserClicked, onDbClicked, user, displayLimit]);
+  }, [
+    queries,
+    onUserClicked,
+    onDbClicked,
+    user,
+    displayLimit,
+    renderComparison,
+  ]);
 
   return (
     <div className="QueryTable">

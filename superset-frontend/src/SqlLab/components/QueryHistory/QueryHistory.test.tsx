@@ -17,9 +17,20 @@
  * under the License.
  */
 import fetchMock from 'fetch-mock';
-import { FeatureFlag, isFeatureEnabled, QueryState } from '@superset-ui/core';
-import { render, screen, waitFor } from 'spec/helpers/testing-library';
+import {
+  FeatureFlag,
+  isFeatureEnabled,
+  QueryState,
+  testQueryResponse,
+} from '@superset-ui/core';
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+} from 'spec/helpers/testing-library';
 import QueryHistory from 'src/SqlLab/components/QueryHistory';
+import QueryComparison from 'src/SqlLab/components/QueryComparison';
 import {
   initialState,
   defaultQueryEditor,
@@ -291,4 +302,98 @@ test('renders contributed toolbar action in queryHistory slot', () => {
   expect(
     screen.getByRole('button', { name: 'History Action' }),
   ).toBeInTheDocument();
+});
+
+test('preserves comparison selections across real table pages', async () => {
+  const queries = Object.fromEntries(
+    Array.from({ length: 51 }, (_, index) => {
+      const id = `page-run-${index}`;
+      return [
+        id,
+        {
+          ...testQueryResponse,
+          id,
+          sqlEditorId: defaultQueryEditor.id,
+          sql: 'SELECT 1',
+          resultsKey: null,
+          startDttm: 1000 + index,
+          endDttm: 2000 + index,
+        },
+      ];
+    }),
+  );
+  render(
+    <QueryComparison
+      queries={Object.values(queries)}
+      columns={[]}
+      displayLimit={1000}
+    />,
+    {
+      useRedux: true,
+      initialState: {
+        ...initialState,
+        sqlLab: { ...initialState.sqlLab, queries },
+      },
+    },
+  );
+  const checkbox = (id: number) =>
+    screen.getByLabelText(`Select query run page-run-${id} for comparison`);
+  fireEvent.click(checkbox(50));
+  fireEvent.click(screen.getByTitle('Next Page'));
+  await waitFor(() => expect(screen.getByText('51-51 of 51')).toBeVisible());
+  expect(checkbox(0)).toBeInTheDocument();
+  fireEvent.click(checkbox(0));
+  expect(checkbox(0)).toBeChecked();
+  fireEvent.click(screen.getByTitle('Previous Page'));
+  await waitFor(() => expect(screen.getByText('1-50 of 51')).toBeVisible());
+  expect(checkbox(50)).toBeChecked();
+  expect(checkbox(49)).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Compare runs' }));
+  await waitFor(() => expect(screen.getByText('No SQL changes')).toBeVisible());
+  expect(
+    fetchMock.callHistory
+      .calls()
+      .filter(({ url }) => !url.includes('/api/v1/security/csrf_token/')),
+  ).toHaveLength(0);
+}, 15000);
+
+test('selects two real history rows and opens comparison without fetching results', async () => {
+  const queries = Object.fromEntries(
+    ['run-a', 'run-b', 'run-c'].map(id => [
+      id,
+      {
+        ...testQueryResponse,
+        id,
+        sqlEditorId: defaultQueryEditor.id,
+        sql: 'SELECT 1',
+        resultsKey: null,
+      },
+    ]),
+  );
+  render(setup(), {
+    useRedux: true,
+    initialState: {
+      ...initialState,
+      sqlLab: { ...initialState.sqlLab, queries },
+    },
+  });
+  expect(screen.getByRole('button', { name: 'Compare runs' })).toBeDisabled();
+  fireEvent.click(
+    screen.getByRole('checkbox', {
+      name: 'Select query run run-a for comparison',
+    }),
+  );
+  fireEvent.click(
+    screen.getByRole('checkbox', {
+      name: 'Select query run run-b for comparison',
+    }),
+  );
+  expect(
+    screen.getByRole('checkbox', {
+      name: 'Select query run run-c for comparison',
+    }),
+  ).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Compare runs' }));
+  await waitFor(() => expect(screen.getByText('No SQL changes')).toBeVisible());
+  expect(fetchMock.callHistory.calls()).toHaveLength(0);
 });
