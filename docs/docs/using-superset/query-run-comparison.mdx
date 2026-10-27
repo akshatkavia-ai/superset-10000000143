@@ -1,0 +1,65 @@
+---
+title: Query-run comparison
+hide_title: true
+sidebar_position: 9
+---
+
+# Query-run comparison
+
+SQL Lab lets you compare two runs already loaded in an editor's query history.
+Comparison does not execute SQL or fetch full result sets.
+
+## Compare two runs
+
+1. Open query history in SQL Lab.
+2. Select a run using its checkbox in the **Compare** column. This becomes
+   **Baseline A**.
+3. Select a second run, **Run B**, then choose **Compare runs**.
+4. Review each run's status, start time, database ID, duration, and returned row
+   count alongside the SQL differences.
+5. Use **Swap A/B** to reverse the comparison, or **Close** to return to history.
+
+Only two runs can be selected at once. Deselect a run or use **Clear selection**
+before choosing another. Selection is cleared when switching editors or when a
+selected run is removed from loaded history.
+
+**Open Baseline A in new tab** and **Open Run B in new tab** copy the original
+SQL into an editor tab without running it automatically.
+
+## Interpret the comparison
+
+Duration and row-count changes are calculated as B minus A. A positive duration
+change means B took longer. A negative change means B took less time.
+
+Percentage duration change is unavailable when the baseline duration is zero.
+Incomplete runs and runs with missing or invalid timestamps show unavailable
+duration metrics. Row counts are reported metadata and may reflect query limits;
+they are not a comparison of result contents.
+
+Timing differences are observations, not proof of optimization. Caching,
+database load, query parameters, and execution conditions can affect timings.
+A warning appears when the runs use different databases.
+
+## SQL differences and limits
+
+The view compares the original SQL text by default. Select **Compare executed
+SQL** to compare the SQL recorded as executed, which may differ after template
+processing or database-specific rewriting. This uses metadata already loaded in
+history; it does not execute or fetch queries.
+
+If executed SQL is missing for either run, the view marks it as unavailable
+rather than treating it as empty or substituting the original SQL. Switch off
+**Compare executed SQL** to return to the original text. Opening the comparison
+again starts with original SQL. Opening either run in a new tab always copies
+the original SQL without running it, regardless of the comparison mode.
+
+Added and removed lines are marked with plus and minus indicators. Identical
+available SQL shows **No SQL changes**.
+
+If either SQL text exceeds 20,000 characters or 500 lines, the view skips diff
+computation and shows bounded previews. Each truncated preview is labeled,
+including when the other run has no recorded executed SQL. The stored SQL is
+not modified.
+
+The comparison does not save baselines, schedule monitoring, benchmark queries,
+or compare full result sets.
